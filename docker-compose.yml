@@ -1,0 +1,7 @@
+version: "3"
+services:
+  proxy:
+    image: vouu/warp-proxy:latest
+    ports:
+      - "8080:8080"
+    restart: always
