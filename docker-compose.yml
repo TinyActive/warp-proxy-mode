@@ -1,7 +1,19 @@
-version: "3"
+version: '3'
+
 services:
-  proxy:
-    image: vouu/warp-proxy:latest
-    ports:
-      - "8080:8080"
+  warp:
+    image: vouu/warp-proxy
+    container_name: warp-no1
     restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      - WARP_SLEEP=2
+      # - WARP_LICENSE_KEY= # optional
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv4.conf.all.src_valid_mark=1
+    volumes:
+      - ./data:/var/lib/cloudflare-warp
