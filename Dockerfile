@@ -1,6 +1,6 @@
-FROM sgabpw/warp-cli:1.9
+FROM caomingjun/warp
 
-RUN rm -rf /warp-cli.sh
-COPY warp-cli.sh /warp-cli.sh
-RUN chmod 755 /warp-cli.sh
-ENTRYPOINT ["/warp-cli.sh"]
+RUN rm -rf /entrypoint.sh
+COPY warp-cli.sh /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

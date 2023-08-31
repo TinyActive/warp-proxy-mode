@@ -1,23 +1,34 @@
 #!/bin/bash
 
-# Start warp-svc in the background and save its process ID.
-/usr/local/bin/warp-svc &
-warp_svc_pid=$!
+# exit when any command fails
+set -e
 
-# Wait for warp-svc to start up and connect to the Cloudflare network.
-sleep 5
+# create a tun device
+mkdir -p /dev/net
+mknod /dev/net/tun c 10 200
+chmod 600 /dev/net/tun
 
-# Register, set mode to "proxy", and connect.
-sh -c '/bin/echo -e "y\n" |warp-cli --accept-tos register'
-warp-cli --accept-tos set-mode proxy
-warp-cli --accept-tos set-custom-endpoint 162.159.192.1:2408
-warp-cli --accept-tos set-proxy-port 9191
-warp-cli --accept-tos connect
+# start the daemon
+warp-svc &
+
+# sleep to wait for the daemon to start, default 2 seconds
+sleep "$WARP_SLEEP"
+
+# if /var/lib/cloudflare-warp/reg.json not exists, register the warp client
+if [ ! -f /var/lib/cloudflare-warp/reg.json ]; then
+    warp-cli register && echo "Warp client registered!"
+    # if a license key is provided, register the license
+    if [ -n "$WARP_LICENSE_KEY" ]; then
+        echo "License key found, registering license..."
+        warp-cli set-license "$WARP_LICENSE_KEY" && echo "Warp license registered!"
+    fi
+    # connect to the warp server
+    warp-cli connect
+else
+    echo "Warp client already registered, skip registration"
+fi
+
+# start the proxy
+gost $GOST_ARGS
 
 socat TCP-LISTEN:8080,bind=0.0.0.0,reuseaddr,fork TCP:127.0.0.1:9191 & sleep 3
-
-# Wait for warp-svc to exit, and check its exit code.
-if ! wait $warp_svc_pid; then
-  echo "warp-svc exited unexpectedly with code $?."
-  exit 1
-fi
